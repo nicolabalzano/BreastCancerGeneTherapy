@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gene Research Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .panel h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+        }
+
+        .panel h2::before {
+            content: "🧬";
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .prediction-panel h2::before {
+            content: "🔮";
+        }
+
+        .chat-panel h2::before {
+            content: "💬";
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="file"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #5dade2, #2e86c1);
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .chat-messages {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: white;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .message.user {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .message.bot {
+            background: #f1f8e9;
+            border-left: 4px solid #4caf50;
+        }
+
+        .message-time {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .article-preview {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .article-preview h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .article-preview .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .article-preview .abstract {
+            color: #555;
+            line-height: 1.5;
+        }
+
+        /* Style for the prediction result area */
+        #predictionResult {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #e9f7ef;
+            color: #1a5276;
+            border-left: 4px solid #2ecc71;
+            line-height: 1.6;
+        }
+
+        #predictionResult h4 {
+            color: #145a32;
+            margin-bottom: 15px;
+        }
+
+        #predictionResult p {
+            margin-bottom: 8px;
+        }
+
+        #predictionResult hr {
+            border: none;
+            border-top: 1px solid #a3e4d7;
+            margin: 15px 0;
+        }
+
+        #predictionResult .answer-block {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        #predictionResult strong {
+            color: #196f3d;
+        }
+
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .container {
+                margin: 10px;
+                padding: 15px;
+                border-radius: 15px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Gene Research Assistant</h1>
+            <p>Powered by PubMed & Cheshire Cat AI</p>
+        </div>
+
+        <div class="main-content">
+            <div>
+                <div class="panel">
+                    <h2>Gene Research</h2>
+
+                    <div class="form-group">
+                        <label for="geneInput">Gene Name:</label>
+                        <input type="text" id="geneInput" placeholder="e.g., BRCA1, TP53, EGFR">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxResults">Max Results:</label>
+                        <input type="number" id="maxResults" value="50" min="1" max="200">
+                    </div>
+
+                    <button class="btn" onclick="searchGene()">🔍 Search & Load</button>
+                    <button class="btn btn-warning" onclick="downloadAbstracts()">⬇️ Download</button>
+
+                    <div class="loading" id="searchLoading">
+                        <div class="spinner"></div>
+                        <p>Searching PubMed and loading...</p>
+                    </div>
+
+                    <div id="searchStatus"></div>
+                    <div id="articlePreviews"></div>
+                </div>
+
+                <div class="panel prediction-panel" style="margin-top: 30px;">
+                    <h2>File Prediction</h2>
+                    <div class="form-group">
+                        <label for="file1">Optional File 1:</label>
+                        <input type="file" id="file1">
+                    </div>
+                    <div class="form-group">
+                        <label for="file2">Optional File 2:</label>
+                        <input type="file" id="file2">
+                    </div>
+                    <div class="form-group">
+                        <label for="file3">Optional File 3:</label>
+                        <input type="file" id="file3">
+                    </div>
+                    <button class="btn btn-info" onclick="sendPrediction()">🚀 Perform Analysis </button>
+                    <div class="loading" id="predictionLoading">
+                        <div class="spinner"></div>
+                        <p>Getting prediction...</p>
+                    </div>
+                    <div id="predictionStatus"></div>
+                    <div id="predictionResult" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="panel chat-panel">
+                <h2>Ask Cheshire Cat</h2>
+
+                <div id="chatMessages" class="chat-messages">
+                    <div class="message bot">
+                        <strong>Cheshire Cat:</strong> Hello! Load some gene abstracts first, then ask me questions
+                        about them!
+                        <div class="message-time">Ready to help</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <textarea id="questionInput"
+                        placeholder="Ask a question about the loaded gene abstracts..."></textarea>
+                </div>
+
+                <button class="btn btn-success" onclick="askQuestion()">💡 Ask Question</button>
+                <button class="btn" onclick="clearChat()">🗑️ Clear Chat</button>
+
+                <div class="loading" id="chatLoading">
+                    <div class="spinner"></div>
+                    <p>Thinking...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentGene = '';
+
+        async function searchGene() {
+            const geneInput = document.getElementById('geneInput');
+            const maxResults = document.getElementById('maxResults');
+            const searchButton = event.target;
+            const loading = document.getElementById('searchLoading');
+            const status = document.getElementById('searchStatus');
+            const previews = document.getElementById('articlePreviews');
+
+            const geneName = geneInput.value.trim();
+            if (!geneName) {
+                showStatus('searchStatus', 'error', 'Please enter a gene name');
+                return;
+            }
+
+            searchButton.disabled = true;
+            loading.style.display = 'block';
+            status.innerHTML = '';
+            previews.innerHTML = '';
+
+            try {
+                const response = await fetch('/search_gene', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gene_name: geneName,
+                        max_results: parseInt(maxResults.value)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    currentGene = geneName;
+                    showStatus('searchStatus', 'success',
+                        `✅ Successfully loaded ${data.uploaded_count}/${data.total_articles} abstracts for ${geneName} into Cheshire Cat!`
+                    );
+
+                    // Show article previews
+                    if (data.articles && data.articles.length > 0) {
+                        previews.innerHTML = '<h3>Article Previews (First 5):</h3>';
+                        data.articles.slice(0, 5).forEach(article => {
+                            previews.innerHTML += `
+                                <div class="article-preview">
+                                    <h4>${article.title}</h4>
+                                    <div class="meta">PMID: ${article.pmid} | Year: ${article.year}</div>
+                                    <div class="abstract">${article.abstract.substring(0, 200)}...</div>
+                                </div>
+                            `;
+                        });
+                    }
+                } else {
+                    showStatus('searchStatus', 'error', data.error || 'Failed to search gene');
+                }
+            } catch (error) {
+                showStatus('searchStatus', 'error', 'Network error: ' + error.message);
+            } finally {
+                searchButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        async function sendPrediction() {
+            const file1 = document.getElementById('file1').files[0];
+            const file2 = document.getElementById('file2').files[0];
+            const file3 = document.getElementById('file3').files[0];
+            const button = event.target;
+            const loading = document.getElementById('predictionLoading');
+            const status = document.getElementById('predictionStatus');
+            const resultDiv = document.getElementById('predictionResult');
+
+            const formData = new FormData();
+            if (file1) formData.append('file1', file1);
+            if (file2) formData.append('file2', file2);
+            if (file3) formData.append('file3', file3);
+
+            //           if (formData.entries().next().done) {
+            //             showStatus('predictionStatus', 'error', 'Please select at least one file to trigger the process.');
+            //        return;
+            //  }
+
+            button.disabled = true;
+            loading.style.display = 'block';
+            status.innerHTML = '';
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = ''; // Clear previous results
+
+            try {
+                const response = await fetch('/send_prediction', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const res = data.result;
+                    showStatus('predictionStatus', 'success', `Analysis for gene <strong>${res.gene_analyzed}</strong> complete!`);
+
+                    // Use innerHTML to build a formatted result block
+                    resultDiv.innerHTML = `
+                        <h4>Analysis Summary</h4>
+                        <p><strong>Gene Analyzed:</strong> ${res.gene_analyzed}</p>
+                        <p><strong>Status:</strong> ${res.status}</p>
+                        <p><strong>PubMed Articles Found:</strong> ${res.articles_found}</p>
+                        <p><strong>Articles Loaded into AI:</strong> ${res.articles_uploaded}</p>
+                        <hr>
+                        <p><strong>Question Asked to AI:</strong></p>
+                        <p><em>"${res.question_asked}"</em></p>
+                        <p><strong>Cheshire Cat's Answer:</strong></p>
+                        <div class="answer-block">
+                            ${marked.parse(res.cheshire_cat_answer)}
+                        </div>
+                    `;
+                    resultDiv.style.display = 'block';
+
+                } else {
+                    showStatus('predictionStatus', 'error', data.error || 'Prediction failed');
+                }
+
+            } catch (error) {
+                showStatus('predictionStatus', 'error', 'Network error: ' + error.message);
+            } finally {
+                button.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+
+        async function askQuestion() {
+            const questionInput = document.getElementById('questionInput');
+            const chatMessages = document.getElementById('chatMessages');
+            const askButton = event.target;
+            const loading = document.getElementById('chatLoading');
+
+            const question = questionInput.value.trim();
+            if (!question) {
+                return;
+            }
+
+            addMessage('user', question);
+            questionInput.value = '';
+
+            askButton.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/ask_question', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.answer) {
+                    addMessage('bot', data.answer);
+                } else {
+                    addMessage('bot', 'Sorry, I couldn\'t get a response. Please try again.');
+                }
+            } catch (error) {
+                addMessage('bot', 'Network error: ' + error.message);
+            } finally {
+                askButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        async function downloadAbstracts() {
+            const geneInput = document.getElementById('geneInput');
+            const geneName = geneInput.value.trim();
+
+            if (!geneName) {
+                showStatus('searchStatus', 'error', 'Please enter a gene name to download abstracts.');
+                return;
+            }
+
+            try {
+                showStatus('searchStatus', 'info', `Preparing download for ${geneName}...`);
+                const response = await fetch('/download_abstracts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gene_name: geneName
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `${geneName}_abstracts.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+
+                    showStatus('searchStatus', 'success', `📁 Download started for ${geneName} abstracts.`);
+                } else {
+                    const data = await response.json();
+                    showStatus('searchStatus', 'error', data.error || 'Download failed');
+                }
+            } catch (error) {
+                showStatus('searchStatus', 'error', 'Download error: ' + error.message);
+            }
+        }
+
+        function addMessage(type, content) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const prefix = type === 'user' ? 'You:' : 'Cheshire Cat:';
+            const time = new Date().toLocaleTimeString();
+
+            // For bot, parse markdown into HTML. For user, display as plain text.
+            const finalContent = type === 'bot' ? marked.parse(content) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            messageDiv.innerHTML = `
+                <strong>${prefix}</strong>
+                <div style="white-space: pre-wrap;">${finalContent}</div>
+                <div class="message-time">${time}</div>
+            `;
+
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function clearChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="message bot">
+                    <strong>Cheshire Cat:</strong> Chat cleared! Ask me anything about the loaded abstracts.
+                    <div class="message-time">Ready to help</div>
+                </div>
+            `;
+        }
+
+        function showStatus(elementId, type, message) {
+            const status = document.getElementById(elementId);
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('questionInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askQuestion();
+            }
+        });
+
+        document.getElementById('geneInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.querySelector('.btn').click(); // Trigger the search button
+            }
+        });
+    </script>
+</body>
+
+</html>

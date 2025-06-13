@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gene_research_frontend
+    ports:
+      - "${FRONTEND_PORT:-5000}:5000"
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_DEBUG=${FLASK_DEBUG:-0}
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED:-1}
+      - CHESHIRE_CAT_URL=${CHESHIRE_CAT_URL}
+      - BACKEND_API_URL=${BACKEND_API_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - MAX_CONTENT_LENGTH=${MAX_CONTENT_LENGTH}
+    volumes:
+      - ./frontend/uploads:/app/uploads
+    networks:
+      - gene_research_network
+    depends_on:
+      - backend
+      - cheshire-cat-core
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backendPrediction
+      dockerfile: Dockerfile
+    container_name: gene_prediction_backend
+    ports:
+      - "${BACKEND_PORT}:5000"
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_DEBUG=${FLASK_DEBUG:-0}
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED:-1}
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - ./backendPrediction/assets:/app/assets
+    networks:
+      - gene_research_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  cheshire-cat-core:
+    image: ghcr.io/cheshire-cat-ai/core:latest
+    container_name: cheshire_cat_core
+    ports:
+      - "${CHESHIRE_CAT_PORT:-1865}:80"
+      - "${CHESHIRE_CAT_DEBUG_PORT:-5678}:5678"
+    volumes:
+      - ./LLM/static:/app/cat/static
+      - ./LLM/plugins:/app/cat/plugins
+      - ./LLM/data:/app/cat/data
+    env_file:
+      - .env
+    environment:
+      - DEEPSEEK_TOKEN=${DEEPSEEK_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - COHERE_API_KEY=${COHERE_API_KEY}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+    networks:
+      - gene_research_network
+    restart: unless-stopped
+
+networks:
+  gene_research_network:
+    driver: bridge
+
+volumes:
+  uploads:
+  cat_data:

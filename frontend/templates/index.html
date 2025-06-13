@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gene Research Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }        .main-content {
+            padding: 30px;
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .panel h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+        }
+
+        .panel h2::before {
+            content: "🧬";
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .prediction-panel h2::before {
+            content: "🔮";
+        }
+
+        .chat-panel h2::before {
+            content: "💬";
+        }
+
+        .panel-description {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+            margin-bottom: 20px;
+            font-style: italic;
+            color: #1565c0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="file"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #5dade2, #2e86c1);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #5a6268, #495057);
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .chat-messages {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: white;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .message.user {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .message.bot {
+            background: #f1f8e9;
+            border-left: 4px solid #4caf50;
+        }
+
+        .message-time {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .article-preview {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .article-preview h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .article-preview .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .article-preview .abstract {
+            color: #555;
+            line-height: 1.5;
+        }
+
+        /* Style for the prediction result area */
+        #predictionResult {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #e9f7ef;
+            color: #1a5276;
+            border-left: 4px solid #2ecc71;
+            line-height: 1.6;
+        }
+
+        #predictionResult h4 {
+            color: #145a32;
+            margin-bottom: 15px;
+        }
+
+        #predictionResult p {
+            margin-bottom: 8px;
+        }
+
+        #predictionResult hr {
+            border: none;
+            border-top: 1px solid #a3e4d7;
+            margin: 15px 0;
+        }
+
+        #predictionResult .answer-block {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        #predictionResult strong {
+            color: #196f3d;
+        }
+
+        /* Stili per i risultati della predizione ML */
+        .prediction-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .result-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .result-section h5 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .prediction-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .prediction-result {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .prediction-result.normal {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .prediction-result.tumor {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .analysis-summary {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+            font-style: italic;
+        }
+
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features-list li {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: #f1f3f4;
+            border-radius: 5px;
+            border-left: 3px solid #4caf50;
+        }
+
+        .files-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .files-list li {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: #fff3cd;
+            border-radius: 5px;
+            border-left: 3px solid #ffc107;        }        /* Contenitore per allineare i pannelli con la stessa altezza */
+        .panels-container {
+            display: flex;
+            gap: 30px;
+            align-items: stretch; /* Fa sì che tutti i pannelli abbiano la stessa altezza */
+        }
+
+        .panels-container .panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Gene Research occupa 1/3 dello spazio */
+        .panels-container .panel:first-child {
+            flex: 1;
+        }
+
+        /* Gene Expression Analysis occupa 2/3 dello spazio */
+        .panels-container .panel:last-child {
+            flex: 2;
+        }
+
+        /* Sezione a larghezza piena per Gene Expression Analysis */
+        .full-width-section {
+            padding: 30px;
+            margin-top: 5px;
+        }
+
+        .full-width-section .panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .full-width-section .panel h2 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            text-align: center;
+            font-weight: 300;
+        }
+
+        /* Stili per la sezione di analisi AI */
+        #geneAnalysisSection {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            border: 2px solid #6c5ce7;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.1);
+        }
+
+        #geneAnalysisSection h3 {
+            color: #6c5ce7;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .ai-analysis-results {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-answer {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #6c5ce7;
+            font-size: 1.05em;
+            line-height: 1.6;
+        }
+
+        .ai-answer h1, .ai-answer h2, .ai-answer h3 {
+            color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .ai-answer p {
+            margin-bottom: 15px;
+        }
+
+        .ai-answer ul, .ai-answer ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .article-preview {
+            background: #fff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .article-preview h6 {
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .article-preview .meta {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .article-preview .abstract {
+            color: #34495e;
+            line-height: 1.5;
+            font-size: 0.95em;
+        }
+
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .container {
+                margin: 10px;
+                padding: 15px;
+                border-radius: 15px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Gene Research Assistant</h1>
+            <p>Powered by PubMed & Biomedical Doctor AI</p>
+        </div>        <div class="main-content">
+            <div class="panels-container">
+                <div class="panel">
+                    <h2>Gene Research</h2>
+
+                    <div class="form-group">
+                        <label for="geneInput">Gene Name:</label>
+                        <input type="text" id="geneInput" placeholder="e.g., BRCA1, TP53, EGFR">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxResults">Max Results:</label>
+                        <input type="number" id="maxResults" value="50" min="1" max="200">
+                    </div>
+
+                    <button class="btn" onclick="searchGene()">🔍 Search & Load</button>
+                    <button class="btn btn-warning" onclick="downloadAbstracts()">⬇️ Download</button>
+
+                    <div class="loading" id="searchLoading">
+                        <div class="spinner"></div>
+                        <p>Searching PubMed and loading...</p>
+                    </div>
+
+                    <div id="searchStatus"></div>
+                    <div id="articlePreviews"></div>
+                </div>
+
+                <div class="panel prediction-panel">
+                    <h2>Gene Expression Analysis</h2>
+                    <p class="panel-description">
+                        Upload genomic data files (TSV format) for machine learning-based analysis. 
+                        The system will predict sample classification and identify key biomarkers.
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="file1">RNA-seq Gene Counts File:</label>
+                        <input type="file" id="file1" accept=".tsv,.txt">
+                        <small>Primary gene expression data (required)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="file2">miRNA Expression File:</label>
+                        <input type="file" id="file2" accept=".tsv,.txt">
+                        <small>MicroRNA expression data (optional)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="file3">Isoform Expression File:</label>
+                        <input type="file" id="file3" accept=".tsv,.txt">
+                        <small>Supplementary genomic data (optional)</small>
+                    </div>
+                    <button class="btn btn-info" onclick="sendPrediction()">🚀 Perform Analysis </button>
+                    <button class="btn btn-secondary" onclick="testBackendConnection()" style="margin-left: 10px;">🔗 Test Backend</button>
+                    <div class="loading" id="predictionLoading">
+                        <div class="spinner"></div>
+                        <p>Getting prediction...</p>
+                    </div>
+                    <div id="predictionStatus"></div>
+                    <div id="predictionResult" style="display: none;"></div>
+                    
+                    <!-- Sezione per l'analisi AI del gene -->
+                    <div id="geneAnalysisSection" style="display: none;">
+                        <h3>🤖 AI Analysis of Top Gene</h3>
+                        <div class="loading" id="geneAnalysisLoading">
+                            <div class="spinner"></div>
+                            <p>Analyzing top gene with AI...</p>
+                        </div>
+                        <div id="geneAnalysisStatus"></div>
+                        <div id="geneAnalysisResult" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="full-width-section">
+            <div class="panel chat-panel">
+                <h2>Ask to Biomedical Doctor AI</h2>
+
+                <div id="chatMessages" class="chat-messages">
+                    <div class="message bot">
+                        <strong>Biomedical Doctor:</strong> Hello! Load some gene abstracts first, then ask me questions
+                        about them!
+                        <div class="message-time">Ready to help</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <textarea id="questionInput"
+                        placeholder="Ask a question about the loaded gene abstracts..."></textarea>
+                </div>
+
+                <button class="btn btn-success" onclick="askQuestion()">� Ask Question</button>
+                <button class="btn" onclick="clearChat()">🗑️ Clear Chat</button>
+                <div class="loading" id="chatLoading">
+                    <div class="spinner"></div>
+                    <p>Thinking...</p>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        let currentGene = '';
+
+        async function searchGene() {
+            const geneInput = document.getElementById('geneInput');
+            const maxResults = document.getElementById('maxResults');
+            const searchButton = event.target;
+            const loading = document.getElementById('searchLoading');
+            const status = document.getElementById('searchStatus');
+            const previews = document.getElementById('articlePreviews');
+
+            const geneName = geneInput.value.trim();
+            if (!geneName) {
+                showStatus('searchStatus', 'error', 'Please enter a gene name');
+                return;
+            }
+
+            searchButton.disabled = true;
+            loading.style.display = 'block';
+            status.innerHTML = '';
+            previews.innerHTML = '';
+
+            try {
+                const response = await fetch('/search_gene', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gene_name: geneName,
+                        max_results: parseInt(maxResults.value)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    currentGene = geneName;
+                    showStatus('searchStatus', 'success',
+                        `✅ Successfully loaded ${data.uploaded_count}/${data.total_articles} abstracts for ${geneName} into Biomedical Doctor!`
+                    );
+
+                    // Show article previews
+                    if (data.articles && data.articles.length > 0) {
+                        previews.innerHTML = '<h3>Article Previews (First 5):</h3>';
+                        data.articles.slice(0, 5).forEach(article => {
+                            previews.innerHTML += `
+                                <div class="article-preview">
+                                    <h4>${article.title}</h4>
+                                    <div class="meta">PMID: ${article.pmid} | Year: ${article.year}</div>
+                                    <div class="abstract">${article.abstract.substring(0, 200)}...</div>
+                                </div>
+                            `;
+                        });
+                    }
+                } else {
+                    showStatus('searchStatus', 'error', data.error || 'Failed to search gene');
+                }
+            } catch (error) {
+                showStatus('searchStatus', 'error', 'Network error: ' + error.message);
+            } finally {
+                searchButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }        async function sendPrediction() {
+            const file1 = document.getElementById('file1').files[0];
+            const file2 = document.getElementById('file2').files[0];
+            const file3 = document.getElementById('file3').files[0];
+            const button = event.target;
+            const loading = document.getElementById('predictionLoading');
+            const status = document.getElementById('predictionStatus');
+            const resultDiv = document.getElementById('predictionResult');
+
+            // Verifica che almeno un file sia stato caricato
+            if (!file1 && !file2 && !file3) {
+                showStatus('predictionStatus', 'error', 'Please select at least one file to perform analysis.');
+                return;
+            }
+
+            const formData = new FormData();
+            if (file1) formData.append('file1', file1);
+            if (file2) formData.append('file2', file2);
+            if (file3) formData.append('file3', file3);
+
+            button.disabled = true;
+            loading.style.display = 'block';
+            status.innerHTML = '';
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = ''; // Clear previous results
+
+            try {
+                showStatus('predictionStatus', 'info', 'Uploading files and processing...');
+                
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const res = data.result;
+                    
+                    // DEBUG: Log della risposta per vedere cosa viene restituito
+                    console.log("DEBUG: Risposta completa dal backend:", data);
+                    console.log("DEBUG: res.top_features:", res.top_features);
+                    console.log("DEBUG: res.top_features_with_gene_names:", res.top_features_with_gene_names);
+                    
+                    showStatus('predictionStatus', 'success', `Analysis for patient <strong>${res.patient_id}</strong> complete!`);                    // Formatta i risultati della predizione ML
+                    // Usa top_features_with_gene_names se disponibile, altrimenti top_features
+                    const featuresData = res.top_features_with_gene_names || res.top_features;
+                    const topFeaturesHtml = featuresData.map(feature => {
+                        const displayName = feature.gene_name || feature.feature;
+                        return `<li><strong>${displayName}:</strong> ${feature.importance.toFixed(4)} (Value: ${feature.sample_value.toFixed(4)})</li>`;
+                    }).join('');
+
+                    resultDiv.innerHTML = `
+                        <div class="prediction-results">
+                            <h4>🔬 Machine Learning Analysis Results</h4>
+                            
+                            <div class="result-section">
+                                <h5>📊 Prediction Summary</h5>
+                                <div class="prediction-summary">
+                                    <p><strong>Patient ID:</strong> ${res.patient_id}</p>
+                                    <p><strong>Sample Type:</strong> ${res.sample_type}</p>
+                                    <p><strong>Files Processed:</strong> ${res.files_processed}</p>
+                                    <p><strong>Prediction:</strong> 
+                                        <span class="prediction-result ${res.ml_prediction.predicted_class === 0 ? 'normal' : 'tumor'}">
+                                            ${res.ml_prediction.interpretation}
+                                        </span>
+                                    </p>
+                                    <p><strong>Confidence:</strong> ${(res.ml_prediction.confidence * 100).toFixed(2)}%</p>
+                                </div>
+                            </div>
+
+                            <div class="result-section">
+                                <h5>🧬 Analysis Summary</h5>
+                                <p class="analysis-summary">${res.analysis_summary}</p>
+                            </div>
+
+                            <div class="result-section">
+                                <h5>📈 Top Contributing Features</h5>
+                                <ul class="features-list">
+                                    ${topFeaturesHtml}
+                                </ul>
+                            </div>
+
+
+                            <div class="result-section">
+                                <h5>📁 Processed Files</h5>
+                                <ul class="files-list">
+                                    ${res.uploaded_files.map(file => 
+                                        `<li><strong>${file.key}:</strong> ${file.filename} (${file.content_type})</li>`
+                                    ).join('')}
+                                </ul>
+                            </div>
+                        </div>                    `;
+                    resultDiv.style.display = 'block';
+
+                    // Dopo aver mostrato i risultati ML, avvia automaticamente l'analisi AI del gene più importante
+                    if (featuresData && featuresData.length > 0) {
+                        const topGene = featuresData[0].gene_name || featuresData[0].feature;
+                        if (topGene) {
+                            // Estrai solo il nome del gene dal feature name se necessario
+                            const geneName = extractGeneName(topGene);
+                            setTimeout(() => {
+                                startGeneAnalysis(geneName);
+                            }, 1000); // Aspetta 1 secondo prima di iniziare l'analisi AI
+                        }
+                    }
+
+                } else {
+                    showStatus('predictionStatus', 'error', data.error || 'Prediction failed');
+                }
+
+            } catch (error) {
+                showStatus('predictionStatus', 'error', 'Network error: ' + error.message);
+            } finally {
+                button.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+
+        async function askQuestion() {
+            const questionInput = document.getElementById('questionInput');
+            const chatMessages = document.getElementById('chatMessages');
+            const askButton = event.target;
+            const loading = document.getElementById('chatLoading');
+
+            const question = questionInput.value.trim();
+            if (!question) {
+                return;
+            }
+
+            addMessage('user', question);
+            questionInput.value = '';
+
+            askButton.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/ask_question', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.answer) {
+                    addMessage('bot', data.answer);
+                } else {
+                    addMessage('bot', 'Sorry, I couldn\'t get a response. Please try again.');
+                }
+            } catch (error) {
+                addMessage('bot', 'Network error: ' + error.message);
+            } finally {
+                askButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        async function downloadAbstracts() {
+            const geneInput = document.getElementById('geneInput');
+            const geneName = geneInput.value.trim();
+
+            if (!geneName) {
+                showStatus('searchStatus', 'error', 'Please enter a gene name to download abstracts.');
+                return;
+            }
+
+            try {
+                showStatus('searchStatus', 'info', `Preparing download for ${geneName}...`);
+                const response = await fetch('/download_abstracts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gene_name: geneName
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `${geneName}_abstracts.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+
+                    showStatus('searchStatus', 'success', `📁 Download started for ${geneName} abstracts.`);
+                } else {
+                    const data = await response.json();
+                    showStatus('searchStatus', 'error', data.error || 'Download failed');
+                }
+            } catch (error) {
+                showStatus('searchStatus', 'error', 'Download error: ' + error.message);
+            }
+        }
+
+        function addMessage(type, content) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const prefix = type === 'user' ? 'You:' : 'Biomedical Doctor:';
+            const time = new Date().toLocaleTimeString();
+
+            // For bot, parse markdown into HTML. For user, display as plain text.
+            const finalContent = type === 'bot' ? marked.parse(content) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            messageDiv.innerHTML = `
+                <strong>${prefix}</strong>
+                <div style="white-space: pre-wrap;">${finalContent}</div>
+                <div class="message-time">${time}</div>
+            `;
+
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function clearChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="message bot">
+                    <strong>Biomedical Doctor:</strong> Chat cleared! Ask me anything about the loaded abstracts.
+                    <div class="message-time">Ready to help</div>
+                </div>
+            `;
+        }
+
+        function showStatus(elementId, type, message) {
+            const status = document.getElementById(elementId);
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+        }
+
+        async function testBackendConnection() {
+            const button = event.target;
+            const status = document.getElementById('predictionStatus');
+            
+            button.disabled = true;
+            showStatus('predictionStatus', 'info', 'Testing backend connection...');
+            
+            try {
+                const response = await fetch('/test_backend', {
+                    method: 'GET'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('predictionStatus', 'success', 
+                        `✅ Backend connection successful!<br>
+                         Backend URL: ${data.backend_url}<br>
+                         Status: ${data.backend_status.status}`);
+                } else {
+                    showStatus('predictionStatus', 'error', 
+                        `❌ Backend connection failed:<br>${data.error}`);
+                }
+                
+            } catch (error) {
+                showStatus('predictionStatus', 'error', 
+                    `❌ Connection test failed: ${error.message}`);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function extractGeneName(featureName) {
+            // Estrae il nome del gene dalla feature
+            // Esempi: "gene_ENSG00000136158.12|fpkm_unstranded" -> "ENSG00000136158.12"
+            if (featureName.includes('gene_')) {
+                const parts = featureName.split('gene_')[1];
+                if (parts && parts.includes('|')) {
+                    return parts.split('|')[0];
+                }
+                return parts;
+            }
+            return featureName;
+        }
+
+        async function startGeneAnalysis(geneName) {
+            const analysisSection = document.getElementById('geneAnalysisSection');
+            const loading = document.getElementById('geneAnalysisLoading');
+            const status = document.getElementById('geneAnalysisStatus');
+            const resultDiv = document.getElementById('geneAnalysisResult');
+
+            // Mostra la sezione di analisi
+            analysisSection.style.display = 'block';
+            loading.style.display = 'block';
+            status.innerHTML = '';
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+
+            try {
+                showStatus('geneAnalysisStatus', 'info', `Starting AI analysis for gene: ${geneName}`);
+
+                const response = await fetch('/api/gene_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gene_name: geneName
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const res = data.result;
+                    
+                    showStatus('geneAnalysisStatus', 'success', 
+                        `AI analysis complete! Found ${res.articles_found} articles, uploaded ${res.articles_uploaded} to AI.`
+                    );
+
+                    resultDiv.innerHTML = `
+                        <div class="ai-analysis-results">
+                            <h4>🧠 AI Analysis Results for ${res.gene_analyzed}</h4>
+                            
+                            <div class="result-section">
+                                <h5>📚 Research Summary</h5>
+                                <p><strong>Articles Found:</strong> ${res.articles_found}</p>
+                                <p><strong>Articles Analyzed:</strong> ${res.articles_uploaded}</p>
+                                ${res.failed_uploads > 0 ? `<p><strong>Failed Uploads:</strong> ${res.failed_uploads}</p>` : ''}
+                            </div>
+
+                            <div class="result-section">
+                                <h5>🤖 AI Analysis</h5>
+                                <div class="ai-answer">
+                                    ${marked.parse(res.ai_analysis)}
+                                </div>
+                            </div>
+
+                            <div class="result-section">
+                                <h5>📄 Recent Articles Preview</h5>
+                                <div class="articles-preview">
+                                    ${res.articles_preview.map(article => `
+                                        <div class="article-preview">
+                                            <h6>${article.title}</h6>
+                                            <div class="meta">PMID: ${article.pmid} | ${article.journal} | ${article.year}</div>
+                                            <div class="abstract">${article.abstract.substring(0, 200)}...</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    resultDiv.style.display = 'block';
+
+                } else {
+                    showStatus('geneAnalysisStatus', 'error', data.error || 'Gene analysis failed');
+                }
+
+            } catch (error) {
+                showStatus('geneAnalysisStatus', 'error', 'Network error during gene analysis: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('questionInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askQuestion();
+            }
+        });
+
+        document.getElementById('geneInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.querySelector('.btn').click(); // Trigger the search button
+            }
+        });
+    </script>
+</body>
+
+</html>

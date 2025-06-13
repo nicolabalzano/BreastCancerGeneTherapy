@@ -1,0 +1,33 @@
+version: '3.8'
+
+# File di override per lo sviluppo
+# Uso: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  frontend:
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - CHESHIRE_CAT_URL=${CHESHIRE_CAT_URL}
+      - BACKEND_API_URL=${BACKEND_API_URL}
+    volumes:
+      - ./frontend:/app
+      - /app/__pycache__
+    command: ["python", "app.py"]
+
+  backend:
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    volumes:
+      - ./backendPrediction:/app
+      - /app/__pycache__
+    command: ["python", "flask_app.py"]
+
+  cheshire-cat-core:
+    env_file:
+      - .env
